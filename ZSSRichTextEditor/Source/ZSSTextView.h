@@ -10,8 +10,8 @@
 
 @interface ZSSTextView : CYRTextView
 
-@property (nonatomic, strong) UIFont *defaultFont;
-@property (nonatomic, strong) UIFont *boldFont;
-@property (nonatomic, strong) UIFont *italicFont;
+@property (nonatomic, strong,nonnull) UIFont *defaultFont;
+@property (nonatomic, strong,nonnull) UIFont *boldFont;
+@property (nonatomic, strong,nonnull) UIFont *italicFont;
 
 @end
