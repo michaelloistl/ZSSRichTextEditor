@@ -525,6 +525,13 @@ static Class hackishFixClass = Nil;
     self.toolBarScroll.contentSize = CGSizeMake(self.toolbar.frame.size.width, 44);
 }
 
+-(void) updateInsets {
+    UIEdgeInsets editorInsets = UIEdgeInsetsMake([self.topLayoutGuide length], 0, 0, [self.bottomLayoutGuide length]);
+    UIScrollView* editorScrollView = self.editorView.scrollView;
+    editorScrollView.contentInset = editorInsets;
+    editorScrollView.scrollIndicatorInsets = editorInsets;
+}
+
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
@@ -540,6 +547,10 @@ static Class hackishFixClass = Nil;
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
 }
 
+-(void) viewWillLayoutSubviews {
+    [super viewWillLayoutSubviews];
+    [self updateInsets];
+}
 
 - (void)didReceiveMemoryWarning
 {
@@ -1240,8 +1251,7 @@ static Class hackishFixClass = Nil;
             editorFrame.size.height = (self.view.frame.size.height - keyboardHeight) - sizeOfToolbar - extraHeight;
             self.editorView.frame = editorFrame;
             self.editorViewFrame = self.editorView.frame;
-            self.editorView.scrollView.contentInset = UIEdgeInsetsZero;
-            self.editorView.scrollView.scrollIndicatorInsets = UIEdgeInsetsZero;
+            [self updateInsets];
             
             // Source View
             CGRect sourceFrame = self.sourceView.frame;
