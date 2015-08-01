@@ -8,7 +8,9 @@
 
 #import <objc/runtime.h>
 #import <UIKit/UIKit.h>
-#import "ZSSRichTextEditor.h"
+#import "HRColorPickerViewController.h"
+
+#import "ZSSRichTextViewController.h"
 #import "ZSSBarButtonItem.h"
 #import "HRColorUtil.h"
 #import "ZSSTextView.h"
@@ -76,7 +78,7 @@ static Class hackishFixClass = Nil;
 
 @end
 
-@interface ZSSRichTextEditor ()
+@interface ZSSRichTextViewController ()  <UIWebViewDelegate, HRColorPickerViewControllerDelegate, UITextViewDelegate>
 @property (nonatomic, strong) UIScrollView *toolBarScroll;
 @property (nonatomic, strong) UIToolbar *toolbar;
 @property (nonatomic, strong) UIView *toolbarHolder;
@@ -102,7 +104,7 @@ static Class hackishFixClass = Nil;
 - (BOOL)isIpad;
 @end
 
-@implementation ZSSRichTextEditor
+@implementation ZSSRichTextViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -185,10 +187,11 @@ static Class hackishFixClass = Nil;
     [self buildToolbar];
     
     if (!self.resourcesLoaded) {
-        NSString *filePath = [[NSBundle mainBundle] pathForResource:@"editor" ofType:@"html"];
+        NSBundle* bundle = [NSBundle bundleForClass:[ZSSRichTextViewController class]];
+        NSString *filePath = [bundle pathForResource:@"editor" ofType:@"html"];
         NSData *htmlData = [NSData dataWithContentsOfFile:filePath];
         NSString *htmlString = [[NSString alloc] initWithData:htmlData encoding:NSUTF8StringEncoding];
-        NSString *source = [[NSBundle mainBundle] pathForResource:@"ZSSRichTextEditor" ofType:@"js"];
+        NSString *source = [bundle pathForResource:@"ZSSRichTextViewController" ofType:@"js"];
         NSString *jsString = [[NSString alloc] initWithData:[NSData dataWithContentsOfFile:source] encoding:NSUTF8StringEncoding];
         htmlString = [htmlString stringByReplacingOccurrencesOfString:@"<!--editor-->" withString:jsString];
         
