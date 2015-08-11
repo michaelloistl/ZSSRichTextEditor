@@ -1105,10 +1105,10 @@ static Class hackishFixClass = Nil;
     NSLog(@"%@", urlString);
     if (navigationType == UIWebViewNavigationTypeLinkClicked) {
         return NO;
-    } else if ([urlString rangeOfString:@"callback://0/"].location != NSNotFound) {
+    } else if ([urlString rangeOfString:@"zss-callback://0/"].location != NSNotFound) {
         
         // We recieved the callback
-        NSString *className = [urlString stringByReplacingOccurrencesOfString:@"callback://0/" withString:@""];
+        NSString *className = [urlString stringByReplacingOccurrencesOfString:@"zss-callback://0/" withString:@""];
         [self updateToolBarWithButtonName:className];
         
     } else if ([urlString rangeOfString:@"debug://"].location != NSNotFound) {
