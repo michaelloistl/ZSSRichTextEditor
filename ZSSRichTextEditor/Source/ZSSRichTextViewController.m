@@ -16,63 +16,72 @@
 #import "ZSSTextView.h"
 
 
+static char BSInputAccessoryViewKey = '\0';
+
+static id BSGetInputAccessoryView(id self,SEL _cmd) {
+    return objc_getAssociatedObject(self, &BSInputAccessoryViewKey);
+}
+
+static void BSSetInputAccessoryView(id self,SEL _cmd,id newValue) {
+    objc_setAssociatedObject(self, &BSInputAccessoryViewKey, newValue, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView) {
+    // Override the input accessory view as described here: http://stackoverflow.com/a/19042279/199360
+    UIView* webDocumentView = nil;
+    for (UIView* view in webView.scrollView.subviews) {
+        if ([[view.class description] hasPrefix:@"UIWebBrowserView"]) {
+            webDocumentView = view;
+            break;
+        }
+    }
+    if (webDocumentView) {
+        if (![webDocumentView respondsToSelector:@selector(setInputAccessoryView:)]) {
+            Class superClass = webDocumentView.class;
+            NSString* generatedClassName = [NSString stringWithFormat:@"%@_InputAccessoryCapable",NSStringFromClass(superClass)];
+            Class generatedClass = NSClassFromString(generatedClassName);
+            if (!generatedClass) {
+                generatedClass = objc_allocateClassPair(superClass,generatedClassName.UTF8String,sizeof(id));
+                // example how to add a property: http://stackoverflow.com/a/7834787/199360
+                class_addMethod(generatedClass, @selector(setInputAccessoryView:), (IMP)BSSetInputAccessoryView, "v@:@");
+                class_addMethod(generatedClass, @selector(inputAccessoryView), (IMP)BSGetInputAccessoryView, "@@:");
+                objc_registerClassPair(generatedClass);
+            }
+            object_setClass(webDocumentView, generatedClass);
+        }
+        [(UITextView*)webDocumentView setInputAccessoryView:accessoryView];
+        [webDocumentView reloadInputViews];
+    }
+}
+
+
+
 @interface UIWebView (HackishAccessoryHiding)
-@property (nonatomic, assign) BOOL hidesInputAccessoryView;
+//@property (nonatomic, assign) BOOL hidesInputAccessoryView;
+
+@property (nullable, readwrite, strong) UIView *inputAccessoryView;
+
 @end
 
 @implementation UIWebView (HackishAccessoryHiding)
 
-static const char * const hackishFixClassName = "UIWebBrowserViewMinusAccessoryView";
-static Class hackishFixClass = Nil;
+@dynamic inputAccessoryView;
 
-- (UIView *)hackishlyFoundBrowserView {
-    UIScrollView *scrollView = self.scrollView;
-    
-    UIView *browserView = nil;
-    for (UIView *subview in scrollView.subviews) {
-        if ([NSStringFromClass([subview class]) hasPrefix:@"UIWebBrowserView"]) {
-            browserView = subview;
+-(void)setInputAccessoryView:(UIView*)inputAccessoryView {
+    BSAttachAccessoryToWebView(self, inputAccessoryView);
+}
+
+-(UIView*)inputAccessoryView {
+    UIView* webDocumentView = nil;
+    for (UIView* view in self.scrollView.subviews) {
+        if ([[view.class description] hasPrefix:@"UIWebBrowserView"] && [view respondsToSelector:@selector(inputAccessoryView)]) {
+            webDocumentView = view;
             break;
         }
     }
-    return browserView;
-}
-
-- (id)methodReturningNil {
-    return nil;
-}
-
-- (void)ensureHackishSubclassExistsOfBrowserViewClass:(Class)browserViewClass {
-    if (!hackishFixClass) {
-        Class newClass = objc_allocateClassPair(browserViewClass, hackishFixClassName, 0);
-        IMP nilImp = [self methodForSelector:@selector(methodReturningNil)];
-        class_addMethod(newClass, @selector(inputAccessoryView), nilImp, "@@:");
-        objc_registerClassPair(newClass);
-        
-        hackishFixClass = newClass;
-    }
-}
-
-- (BOOL) hidesInputAccessoryView {
-    UIView *browserView = [self hackishlyFoundBrowserView];
-    return [browserView class] == hackishFixClass;
-}
-
-- (void) setHidesInputAccessoryView:(BOOL)value {
-    UIView *browserView = [self hackishlyFoundBrowserView];
-    if (browserView == nil) {
-        return;
-    }
-    [self ensureHackishSubclassExistsOfBrowserViewClass:[browserView class]];
     
-    if (value) {
-        object_setClass(browserView, hackishFixClass);
-    }
-    else {
-        Class normalClass = objc_getClass("UIWebBrowserView");
-        object_setClass(browserView, normalClass);
-    }
-    [browserView reloadInputViews];
+    // at this point either webDocumentView responds to `inputAccessoryView` or it is nil.
+    return [webDocumentView inputAccessoryView];
 }
 
 @end
@@ -129,7 +138,8 @@ static Class hackishFixClass = Nil;
     // Editor View
     self.editorView = [[UIWebView alloc] initWithFrame:frame];
     self.editorView.delegate = self;
-    self.editorView.hidesInputAccessoryView = YES;
+    ///self.editorView.hidesInputAccessoryView = YES;
+//    self.editorView.inputAccessoryView = self.toolbarHolder;
     self.editorView.keyboardDisplayRequiresUserAction = NO;
     self.editorView.scalesPageToFit = YES;
     self.editorView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
@@ -160,6 +170,8 @@ static Class hackishFixClass = Nil;
     [self.toolbarHolder insertSubview:backgroundToolbar atIndex:0];
     NSBundle* bundle = [NSBundle bundleForClass:[ZSSRichTextViewController class]];
 
+    self.editorView.inputAccessoryView = self.toolbarHolder;
+
     // Hide Keyboard
     if (![self isIpad]) {
         UITraitCollection* traitCollection = self.traitCollection;
@@ -182,7 +194,7 @@ static Class hackishFixClass = Nil;
         line.alpha = 0.7f;
         [toolbarCropper addSubview:line];
     }
-    [self.view addSubview:self.toolbarHolder];
+   // [self.view addSubview:self.toolbarHolder];
     
     // Build the toolbar
     [self buildToolbar];
@@ -1216,79 +1228,6 @@ static Class hackishFixClass = Nil;
 #pragma mark - Keyboard status
 
 - (void)keyboardWillShowOrHide:(NSNotification *)notification {
-    
-    // Orientation
-    UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
-    
-    // User Info
-    NSDictionary *info = notification.userInfo;
-    CGFloat duration = [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] floatValue];
-    int curve = [[info objectForKey:UIKeyboardAnimationCurveUserInfoKey] intValue];
-    CGRect keyboardEnd = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
-    
-    // Toolbar Sizes
-    CGFloat sizeOfToolbar = self.toolbarHolder.frame.size.height;
-    
-    // Keyboard Size
-    //Checks if IOS8, gets correct keyboard height
-    CGFloat keyboardHeight = UIInterfaceOrientationIsLandscape(orientation) ? ([[[UIDevice currentDevice] systemVersion] floatValue] >= 8.000000) ? keyboardEnd.size.height : keyboardEnd.size.width : keyboardEnd.size.height;
-    
-    // Correct Curve
-    UIViewAnimationOptions animationOptions = curve << 16;
-    
-    if ([notification.name isEqualToString:UIKeyboardWillShowNotification]) {
-        
-        [UIView animateWithDuration:duration delay:0 options:animationOptions animations:^{
-            
-            // Toolbar
-            CGRect frame = self.toolbarHolder.frame;
-            frame.origin.y = self.view.frame.size.height - (keyboardHeight + sizeOfToolbar);
-            self.toolbarHolder.frame = frame;
-            
-            // Editor View
-            const int extraHeight = 10;
-            
-            CGRect editorFrame = self.editorView.frame;
-            editorFrame.size.height = (self.view.frame.size.height - keyboardHeight) - sizeOfToolbar - extraHeight;
-            self.editorView.frame = editorFrame;
-            self.editorViewFrame = self.editorView.frame;
-            [self updateInsets];
-            
-            // Source View
-            CGRect sourceFrame = self.sourceView.frame;
-            sourceFrame.size.height = (self.view.frame.size.height - keyboardHeight) - sizeOfToolbar - extraHeight;
-            self.sourceView.frame = sourceFrame;
-            
-            // Provide editor with keyboard height and editor view height
-            [self setFooterHeight:(keyboardHeight - 8)];
-            [self setContentHeight: self.editorViewFrame.size.height];
-            
-        } completion:nil];
-        
-    } else {
-        
-        [UIView animateWithDuration:duration delay:0 options:animationOptions animations:^{
-            
-            CGRect frame = self.toolbarHolder.frame;
-            frame.origin.y = self.view.frame.size.height + keyboardHeight;
-            self.toolbarHolder.frame = frame;
-            
-            // Editor View
-            CGRect editorFrame = self.editorView.frame;
-            editorFrame.size.height = self.view.frame.size.height;
-            self.editorView.frame = editorFrame;
-            self.editorViewFrame = self.editorView.frame;
-            self.editorView.scrollView.contentInset = UIEdgeInsetsZero;
-            self.editorView.scrollView.scrollIndicatorInsets = UIEdgeInsetsZero;
-            
-            // Source View
-            CGRect sourceFrame = self.sourceView.frame;
-            sourceFrame.size.height = self.view.frame.size.height;
-            self.sourceView.frame = sourceFrame;
-            
-        } completion:nil];
-        
-    }//end
     
 }
 
