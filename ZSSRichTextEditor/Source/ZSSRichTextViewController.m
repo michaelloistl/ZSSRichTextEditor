@@ -214,7 +214,6 @@ static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView)
         [self.editorView loadHTMLString:htmlString baseURL:self.baseURL];
         self.resourcesLoaded = YES;
     }
-    
 }
 
 
@@ -543,10 +542,13 @@ static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView)
 }
 
 -(void) updateInsets {
-    UIEdgeInsets editorInsets = UIEdgeInsetsMake([self.topLayoutGuide length], 0, 0, [self.bottomLayoutGuide length]);
-    UIScrollView* editorScrollView = self.editorView.scrollView;
-    editorScrollView.contentInset = editorInsets;
-    editorScrollView.scrollIndicatorInsets = editorInsets;
+    UIRectEdge edgesForExtendedLayout = self.edgesForExtendedLayout;
+    if (edgesForExtendedLayout & UIRectEdgeTop && edgesForExtendedLayout & UIRectEdgeBottom) {
+        UIEdgeInsets editorInsets = UIEdgeInsetsMake([self.topLayoutGuide length], 0, 0, [self.bottomLayoutGuide length]);
+        UIScrollView* editorScrollView = self.editorView.scrollView;
+        editorScrollView.contentInset = editorInsets;
+        editorScrollView.scrollIndicatorInsets = editorInsets;
+    }
 }
 
 

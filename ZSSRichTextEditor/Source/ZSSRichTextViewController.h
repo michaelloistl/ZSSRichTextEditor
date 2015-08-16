@@ -196,7 +196,6 @@ extern NSString * const ZSSRichTextEditorToolbarNone;
  */
 - (void)editorDidScrollWithPosition:(NSInteger)position;
 
-
 @end
 
 
