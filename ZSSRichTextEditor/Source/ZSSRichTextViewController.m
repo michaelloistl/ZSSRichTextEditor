@@ -628,12 +628,16 @@ static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView)
 
 - (void)showHTMLSource:(ZSSBarButtonItem *)barButtonItem {
     if (self.sourceView.hidden) {
+        self.editorView.inputAccessoryView = nil;
+        self.sourceView.inputAccessoryView = self.toolbarHolder;
         self.sourceView.text = [self getHTML];
         self.sourceView.hidden = NO;
         barButtonItem.tintColor = [UIColor blackColor];
         self.editorView.hidden = YES;
         [self enableToolbarItems:NO];
     } else {
+        self.sourceView.inputAccessoryView = nil;
+        self.editorView.inputAccessoryView = self.toolbarHolder;
         [self setHTML:self.sourceView.text];
         barButtonItem.tintColor = [self barButtonItemDefaultColor];
         self.sourceView.hidden = YES;
