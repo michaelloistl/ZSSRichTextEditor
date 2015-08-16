@@ -47,12 +47,15 @@ extern NSString * const ZSSRichTextEditorToolbarAll;
 extern NSString * const ZSSRichTextEditorToolbarNone;
 
 @class ZSSBarButtonItem;
+@protocol ZSSRichTextViewControllerDelegate;
+
 
 /**
  *  The viewController used with ZSSRichTextEditor
  */
 @interface ZSSRichTextViewController : UIViewController
 
+@property (nonatomic,weak) id<ZSSRichTextViewControllerDelegate> delegate;
 
 /**
  *  The base URL to use for the webView
@@ -192,5 +195,15 @@ extern NSString * const ZSSRichTextEditorToolbarNone;
  *  Scroll event callback with position
  */
 - (void)editorDidScrollWithPosition:(NSInteger)position;
+
+
+@end
+
+
+@protocol ZSSRichTextViewControllerDelegate <NSObject>
+
+@optional
+
+-(void) richTextViewControllerDidChangeContent:(ZSSRichTextViewController*) ctrl;
 
 @end

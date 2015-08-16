@@ -7,6 +7,7 @@
 //
 
 #import <objc/runtime.h>
+#import <JavaScriptCore/JavaScriptCore.h>
 #import <UIKit/UIKit.h>
 #import "HRColorPickerViewController.h"
 
@@ -110,6 +111,9 @@ static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView)
 - (NSString *)tidyHTML:(NSString *)html;
 - (void)enableToolbarItems:(BOOL)enable;
 - (BOOL)isIpad;
+
+- (void) notifyTextChange;
+
 @end
 
 @implementation ZSSRichTextViewController
@@ -569,6 +573,13 @@ static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView)
 {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+-(void)notifyTextChange {
+    id<ZSSRichTextViewControllerDelegate> delegate = self.delegate;
+    if ([delegate respondsToSelector:@selector(richTextViewControllerDidChangeContent:)]) {
+        [delegate richTextViewControllerDidChangeContent:self];
+    }
 }
 
 #pragma mark - Editor Interaction
@@ -1109,6 +1120,10 @@ static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView)
     }
 }
 
+- (BOOL)textView:(UITextView* )textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString* )text {
+    [self performSelector:@selector(notifyTextChange) withObject:nil afterDelay:0];
+    return YES;
+}
 
 #pragma mark - UIWebView Delegate
 
@@ -1153,6 +1168,16 @@ static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView)
         self.internalHTML = @"";
     }
     [self updateHTML];
+    
+    // Listen to keyboard changes
+    // http://stackoverflow.com/a/22246765/199360
+    ZSSRichTextViewController __weak* weakSelf = self;
+    JSContext *ctx = [webView valueForKeyPath:@"documentView.webView.mainFrame.javaScriptContext"];
+    ctx[@"zssUpdateCallback"] = ^(JSValue *msg) {
+        [weakSelf notifyTextChange];
+    };
+    [ctx evaluateScript:@"document.getElementById('zss_editor_content').addEventListener('input', zssUpdateCallback, false);"];
+
     if (self.shouldShowKeyboard) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self focusTextEditor];
