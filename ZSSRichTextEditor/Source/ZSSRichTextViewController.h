@@ -147,6 +147,12 @@ extern NSString * const ZSSRichTextEditorToolbarNone;
 - (void)insertImage:(NSString *)url alt:(NSString *)alt;
 
 /**
+ Inserts an image from the specified URL
+ */
+
+-(void) insertImageFromURL:(NSURL*) url alternateText:(NSString*) alt;
+
+/**
  *  Shows the insert link dialog with optional inputs
  *
  *  @param url   The URL for the link

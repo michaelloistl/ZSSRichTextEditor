@@ -588,6 +588,7 @@ static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView)
 
 - (void)focusTextEditor {
     self.editorView.keyboardDisplayRequiresUserAction = NO;
+    
     NSString *js = [NSString stringWithFormat:@"zss_editor.focusEditor();"];
     [self.editorView stringByEvaluatingJavaScriptFromString:js];
 }
@@ -973,6 +974,13 @@ static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView)
     [self showInsertImageDialogWithLink:self.selectedImageURL alt:self.selectedImageAlt];
     
 }
+
+-(void) insertImageFromURL:(NSURL*) url alternateText:(NSString*) alt {
+    // Save the selection location
+    [self.editorView stringByEvaluatingJavaScriptFromString:@"zss_editor.prepareInsert();"];
+    [self insertImage:[url absoluteString] alt:alt];
+}
+
 
 - (void)showInsertImageDialogWithLink:(NSString *)url alt:(NSString *)alt {
     
