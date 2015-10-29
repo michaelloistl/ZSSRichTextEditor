@@ -1139,11 +1139,9 @@ static void BSAttachAccessoryToWebView(UIWebView* webView,UIView* accessoryView)
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {
     
-    
-    
     NSString *urlString = [[request URL] absoluteString];
-    NSLog(@"web request");
-    NSLog(@"%@", urlString);
+//    NSLog(@"web request");
+//    NSLog(@"%@", urlString);
     if (navigationType == UIWebViewNavigationTypeLinkClicked) {
         return NO;
     } else if ([urlString rangeOfString:@"zss-callback://0/"].location != NSNotFound) {
