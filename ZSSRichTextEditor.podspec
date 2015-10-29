@@ -28,7 +28,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/michaelloistl/ZSSRichTextEditor.git", :tag => "0.5.3" }
 
   s.source_files  = "**/*.{h,m}"
-  s.exclude_files = "**/ZSSDemo*.{h,m}", "**/ZSSAppDelegate*.{h,m}", "**/main.m"
+  s.exclude_files = "**/ZSSDemo*.{h,m}", "**/ZSSAppDelegate*.{h,m}", "**/main.m", "*Tests.{h,m}"
   s.resources = "**/ZSS*.png", "**/ZSSRichTextEditor.js", "**/editor.html"
 
   s.frameworks = "CoreGraphics", "CoreText"
